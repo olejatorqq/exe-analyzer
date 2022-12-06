@@ -75,40 +75,43 @@ int main(int args, char* argv[])
     printf("\t%#08x\tDll Characteristics\n", pNT->OptionalHeader.DllCharacteristics);
     printf("\t%#08x\tData Directory\n\n", pNT->OptionalHeader.DataDirectory);
 
-    // DATA_DIRECTORIES
-    printf("NT HEADER -> OptionalHeader -> ExportDirectoryAddress: %#08x\n", pNT->OptionalHeader.DataDirectory[0].VirtualAddress, pNT->OptionalHeader.DataDirectory[0].Size);
-    printf("NT HEADER -> OptionalHeader -> ImportDirectoryAddress: %#08x\n\n", pNT->OptionalHeader.DataDirectory[1].VirtualAddress, pNT->OptionalHeader.DataDirectory[1].Size);
+    // DATA DIRECTORIES
+    printf("DATA DIRECTORIES\n");
+    printf("\t%#08x\tExport Directory Address\n", pNT->OptionalHeader.DataDirectory[0].VirtualAddress, pNT->OptionalHeader.DataDirectory[0].Size);
+    printf("\t%#08x\tImport Directory Address\n\n", pNT->OptionalHeader.DataDirectory[1].VirtualAddress, pNT->OptionalHeader.DataDirectory[1].Size);
 
 
     PIMAGE_SECTION_HEADER pSection;
 
     // SECTION_HEADERS
-    // get offset to first section headeer
+    printf("SECTION HEADER\n");
+
+    // Получение смещения к первой секции заголовка
     DWORD sectionLocation = (DWORD)pNT + sizeof(DWORD) + (DWORD)(sizeof(IMAGE_FILE_HEADER)) + (DWORD)pNT->FileHeader.SizeOfOptionalHeader;
     DWORD sectionSize = (DWORD)sizeof(IMAGE_SECTION_HEADER);
 
+    // Получение смещения RVA
     DWORD importDirectoryRVA = pNT->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
-
-
 
 
     for (size_t i = 0; i < pNT->FileHeader.NumberOfSections; i++)
     {
         pSection = (PIMAGE_SECTION_HEADER)sectionLocation;
-        printf("Name: %s \n", pSection->Name);
-        printf("Virtual Size (Not RAW): %#08x\t %d\n", pSection->Misc.VirtualSize,
+        printf("\t%s\n", pSection->Name);
+        printf("\t%#08x %d\tVirtual Size (Not RAW)\n", pSection->Misc.VirtualSize,
             pSection->Misc.VirtualSize);
-        printf("Virtual Adress: %#08x\n", pSection->VirtualAddress);
-        printf("Size of Raw Data: %#08x\t\t %d\n", pSection->SizeOfRawData, 
+        printf("\t%#08x\tVirtual Adress\n", pSection->VirtualAddress);
+        printf("\t%#08x %d\tSize of Raw Data\n", pSection->SizeOfRawData, 
             pSection->SizeOfRawData);
-        printf("Pointer to RAW Data: %#08x\t %d\n", pSection->PointerToRawData,
+        printf("\t%#08x %d\tPointer to RAW Data\n", pSection->PointerToRawData,
             pSection->PointerToRawData);
-        printf("Characteristics: %#08x\n\n", pSection->Characteristics);
+        printf("\t%#08x\tCharacteristics\n\n", pSection->Characteristics);
 
+        // Сохранение раздела, содержащего таблицу каталога импорта
         if (importDirectoryRVA >= pSection->VirtualAddress && importDirectoryRVA < pSection->VirtualAddress + pSection->Misc.VirtualSize) {
             importSection = pSection;
         }
-        sectionLocation += sectionSize;
+        //sectionLocation += sectionSize;
 
         pSection++;
     }
