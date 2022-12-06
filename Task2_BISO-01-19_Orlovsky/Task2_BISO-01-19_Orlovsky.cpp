@@ -111,33 +111,36 @@ int main(int args, char* argv[])
         if (importDirectoryRVA >= pSection->VirtualAddress && importDirectoryRVA < pSection->VirtualAddress + pSection->Misc.VirtualSize) {
             importSection = pSection;
         }
-        //sectionLocation += sectionSize;
+        sectionLocation += sectionSize;
 
-        pSection++;
     }
 
+    // Получение смещения файла для таблицы импорта
     rawOffset = (DWORD)pBuffer + importSection->PointerToRawData;
 
+    // Получение указателя на смещение файла дескриптора импорта
     importDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)(rawOffset + (pNT->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress - importSection->VirtualAddress));
 
-    printf("DLL Imports\n");
+    // DLL_IMPORTS
+    printf("DLL IMPORTS\n");
     for (; importDescriptor->Name != 0; importDescriptor++) {
-        // imported dll modules
+        // Импортирование DLL модулей
         printf("\t%s\n", rawOffset + (importDescriptor->Name - importSection->VirtualAddress));
         thunk = importDescriptor->OriginalFirstThunk == 0 ? importDescriptor->FirstThunk : importDescriptor->OriginalFirstThunk;
         thunkData = (PIMAGE_THUNK_DATA)(rawOffset + (thunk - importSection->VirtualAddress));
 
-        // dll exported functions
+        // Функции dll
         for (; thunkData->u1.AddressOfData != 0; thunkData++) {
-            //a cheap and probably non-reliable way of checking if the function is imported via its ordinal number ¯\_(ツ)_/¯
+            // Проверка импорта функции через ее порядковый номер
             if (thunkData->u1.AddressOfData > 0x80000000) {
-                //show lower bits of the value to get the ordinal ¯\_(ツ)_/¯
+                // Младшие биты для получение порядкового номера
                 printf("\t\tOrdinal: %x\n", (WORD)thunkData->u1.AddressOfData);
             }
             else {
                 printf("\t\t%s\n", (rawOffset + (thunkData->u1.AddressOfData - importSection->VirtualAddress + 2)));
             }
         }
+        printf("\n");
     }
 
 
